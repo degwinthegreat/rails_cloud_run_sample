@@ -76,6 +76,7 @@ resource "google_service_account" "rails_service_account" {
 resource "google_cloud_run_v2_service" "rails_app" {
   name     = var.app_name
   location = var.region
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.rails_service_account.email
@@ -122,17 +123,6 @@ resource "google_cloud_run_v2_service" "rails_app" {
         period_seconds        = 10
         failure_threshold     = 3
       }
-
-      liveness_probe {
-        http_get {
-          path = "/"
-          port = 80
-        }
-        initial_delay_seconds = 30
-        timeout_seconds       = 10
-        period_seconds        = 30
-        failure_threshold     = 3
-      }
     }
 
     scaling {
@@ -149,5 +139,15 @@ resource "google_cloud_run_v2_service" "rails_app" {
   depends_on = [
     google_project_service.cloud_run_api,
     google_compute_subnetwork.rails_subnet
+  ]
+}
+
+# Cloud Run IAM - Allow public access
+resource "google_cloud_run_service_iam_binding" "noauth" {
+  location = google_cloud_run_v2_service.rails_app.location
+  service  = google_cloud_run_v2_service.rails_app.name
+  role     = "roles/run.invoker"
+  members = [
+    "allUsers"
   ]
 }
