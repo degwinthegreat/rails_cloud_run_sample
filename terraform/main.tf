@@ -23,6 +23,26 @@ provider "google-beta" {
 }
 
 # Enable required APIs
+resource "google_project_service" "cloud_run_api" {
+  service = "run.googleapis.com"
+}
+
+resource "google_project_service" "alloydb_api" {
+  service = "alloydb.googleapis.com"
+}
+
+resource "google_project_service" "container_api" {
+  service = "container.googleapis.com"
+}
+
+resource "google_project_service" "cloudbuild_api" {
+  service = "cloudbuild.googleapis.com"
+}
+
+resource "google_project_service" "secretmanager_api" {
+  service = "secretmanager.googleapis.com"
+}
+
 resource "google_project_service" "servicenetworking_api" {
   service = "servicenetworking.googleapis.com"
 }
