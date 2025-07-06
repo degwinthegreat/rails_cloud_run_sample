@@ -32,3 +32,19 @@ output "artifact_registry_repository" {
   description = "Artifact Registry repository URL"
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.rails_repo.repository_id}"
 }
+
+output "github_actions_service_account_email" {
+  description = "Email of the GitHub Actions service account"
+  value       = google_service_account.github_actions_sa.email
+}
+
+output "github_actions_service_account_key" {
+  description = "Base64 encoded service account key for GitHub Actions"
+  value       = google_service_account_key.github_actions_key.private_key
+  sensitive   = true
+}
+
+output "container_image_url" {
+  description = "Full container image URL for Artifact Registry"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.rails_repo.repository_id}/${var.app_name}"
+}

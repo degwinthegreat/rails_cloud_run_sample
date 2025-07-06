@@ -215,3 +215,41 @@ resource "google_artifact_registry_repository" "rails_repo" {
 
   depends_on = [google_project_service.artifactregistry_api]
 }
+
+# Service Account for GitHub Actions
+resource "google_service_account" "github_actions_sa" {
+  account_id   = "${var.app_name}-ga"
+  display_name = "GitHub Actions Service Account"
+  description  = "Service account for GitHub Actions CI/CD pipeline"
+}
+
+# Service Account Key for GitHub Actions
+resource "google_service_account_key" "github_actions_key" {
+  service_account_id = google_service_account.github_actions_sa.name
+  public_key_type    = "TYPE_X509_PEM_FILE"
+}
+
+# IAM roles for GitHub Actions Service Account
+resource "google_project_iam_member" "github_actions_artifact_registry_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_cloud_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_secret_manager_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_service_account_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
