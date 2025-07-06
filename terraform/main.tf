@@ -51,6 +51,10 @@ resource "google_project_service" "compute_api" {
   service = "compute.googleapis.com"
 }
 
+resource "google_project_service" "artifactregistry_api" {
+  service = "artifactregistry.googleapis.com"
+}
+
 # VPC Network
 resource "google_compute_network" "rails_vpc" {
   name                    = "${var.app_name}-vpc"
@@ -200,4 +204,14 @@ resource "google_alloydb_instance" "rails_primary" {
   }
 
   depends_on = [google_alloydb_cluster.rails_cluster]
+}
+
+# Artifact Registry for Docker images
+resource "google_artifact_registry_repository" "rails_repo" {
+  location      = var.region
+  repository_id = "${var.app_name}-repo"
+  description   = "Docker repository for Rails application"
+  format        = "DOCKER"
+
+  depends_on = [google_project_service.artifactregistry_api]
 }

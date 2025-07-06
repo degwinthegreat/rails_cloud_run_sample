@@ -27,3 +27,8 @@ output "alloydb_primary_ip" {
   value       = google_alloydb_instance.rails_primary.ip_address
   sensitive   = true
 }
+
+output "artifact_registry_repository" {
+  description = "Artifact Registry repository URL"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.rails_repo.repository_id}"
+}
