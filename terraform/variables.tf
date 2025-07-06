@@ -14,3 +14,15 @@ variable "app_name" {
   type        = string
   default     = "rails-cloud-run-sample"
 }
+
+variable "environment" {
+  description = "The deployment environment"
+  type        = string
+  default     = "production"
+}
+
+variable "container_image" {
+  description = "Container image URL for the Rails application"
+  type        = string
+  default     = "mirror.gcr.io/nginx:latest"
+}

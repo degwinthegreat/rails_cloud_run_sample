@@ -57,3 +57,97 @@ resource "google_compute_network" "rails_vpc" {
   auto_create_subnetworks = false
   depends_on              = [google_project_service.compute_api]
 }
+
+# Subnet for Cloud Run
+resource "google_compute_subnetwork" "rails_subnet" {
+  name          = "${var.app_name}-subnet"
+  ip_cidr_range = "10.1.0.0/24"
+  region        = var.region
+  network       = google_compute_network.rails_vpc.id
+}
+
+# Service Account for Cloud Run
+resource "google_service_account" "rails_service_account" {
+  account_id   = "${var.app_name}-run"
+  display_name = "Rails Cloud Run Service Account"
+}
+
+# Cloud Run Service
+resource "google_cloud_run_v2_service" "rails_app" {
+  name     = var.app_name
+  location = var.region
+
+  template {
+    service_account = google_service_account.rails_service_account.email
+
+    vpc_access {
+      network_interfaces {
+        network    = google_compute_network.rails_vpc.name
+        subnetwork = google_compute_subnetwork.rails_subnet.name
+      }
+      egress = "PRIVATE_RANGES_ONLY"
+    }
+
+    containers {
+      image = var.container_image
+
+      ports {
+        container_port = 80
+      }
+
+      env {
+        name  = "RAILS_ENV"
+        value = "production"
+      }
+
+      env {
+        name  = "RAILS_LOG_TO_STDOUT"
+        value = "true"
+      }
+
+      resources {
+        limits = {
+          cpu    = "2"
+          memory = "2Gi"
+        }
+      }
+
+      startup_probe {
+        http_get {
+          path = "/"
+          port = 80
+        }
+        initial_delay_seconds = 30
+        timeout_seconds       = 10
+        period_seconds        = 10
+        failure_threshold     = 3
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/"
+          port = 80
+        }
+        initial_delay_seconds = 30
+        timeout_seconds       = 10
+        period_seconds        = 30
+        failure_threshold     = 3
+      }
+    }
+
+    scaling {
+      min_instance_count = 1
+      max_instance_count = 10
+    }
+  }
+
+  traffic {
+    percent = 100
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+  }
+
+  depends_on = [
+    google_project_service.cloud_run_api,
+    google_compute_subnetwork.rails_subnet
+  ]
+}
