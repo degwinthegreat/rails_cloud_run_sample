@@ -16,3 +16,14 @@ output "subnet_name" {
   description = "Name of the subnet used for Direct VPC Egress"
   value       = google_compute_subnetwork.rails_subnet.name
 }
+
+output "alloydb_cluster_name" {
+  description = "Name of the AlloyDB cluster"
+  value       = google_alloydb_cluster.rails_cluster.name
+}
+
+output "alloydb_primary_ip" {
+  description = "IP address of the AlloyDB primary instance"
+  value       = google_alloydb_instance.rails_primary.ip_address
+  sensitive   = true
+}

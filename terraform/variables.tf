@@ -26,3 +26,15 @@ variable "container_image" {
   type        = string
   default     = "mirror.gcr.io/nginx:latest"
 }
+
+variable "db_user" {
+  description = "Database username for AlloyDB"
+  type        = string
+  default     = "rails_user"
+}
+
+variable "db_password" {
+  description = "Database password for AlloyDB"
+  type        = string
+  sensitive   = true
+}

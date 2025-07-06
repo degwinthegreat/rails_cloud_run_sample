@@ -138,7 +138,8 @@ resource "google_cloud_run_v2_service" "rails_app" {
 
   depends_on = [
     google_project_service.cloud_run_api,
-    google_compute_subnetwork.rails_subnet
+    google_compute_subnetwork.rails_subnet,
+    google_alloydb_instance.rails_primary
   ]
 }
 
@@ -150,4 +151,53 @@ resource "google_cloud_run_service_iam_binding" "noauth" {
   members = [
     "allUsers"
   ]
+}
+
+# Private service connection for AlloyDB
+resource "google_compute_global_address" "private_ip_alloc" {
+  name          = "${var.app_name}-private-ip"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.rails_vpc.id
+  depends_on    = [google_project_service.servicenetworking_api]
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.rails_vpc.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
+}
+
+# AlloyDB Cluster
+resource "google_alloydb_cluster" "rails_cluster" {
+  cluster_id = "${var.app_name}-cluster"
+  location   = var.region
+
+  network_config {
+    network = google_compute_network.rails_vpc.id
+  }
+
+  initial_user {
+    user     = var.db_user
+    password = var.db_password
+  }
+
+  depends_on = [
+    google_service_networking_connection.private_vpc_connection,
+    google_project_service.alloydb_api
+  ]
+}
+
+# AlloyDB Primary Instance
+resource "google_alloydb_instance" "rails_primary" {
+  cluster       = google_alloydb_cluster.rails_cluster.name
+  instance_id   = "${var.app_name}-primary"
+  instance_type = "PRIMARY"
+
+  machine_config {
+    cpu_count = 2
+  }
+
+  depends_on = [google_alloydb_cluster.rails_cluster]
 }
